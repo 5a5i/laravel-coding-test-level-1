@@ -35,14 +35,35 @@ class Event extends Model
 
         static::creating(function ($issue) {
             $issue->id = Str::uuid(36);
+            $issue->deletedAt = null;
         });
     }
 
-    public function setNameAttribute($value)
+    public function setSlugAttribute($value)
     {
-        $this->attributes['name'] = $value;
-        $this->attributes['slug'] = Str::slug($value.'-'.time());
-        $this->attributes['deletedAt'] = null;
+        if($value === null && $this->slug === null){
+            $this->attributes['slug'] = Str::slug($this->attributes['name'].'-'.time());
+        } else {
+            $this->attributes['slug'] = Str::slug($value);
+        }
+    }
+
+    public function setStartAtAttribute($value)
+    {
+        if($value === null && $this->startAt === null){
+            $this->attributes['startAt'] = date('Y-m-d H:i:s', strtotime('-1 week', strtotime(date("Y-m-d H:i:s"))));
+        } else {
+            $this->attributes['startAt'] = $value;
+        }
+    }
+
+    public function setEndAtAttribute($value)
+    {
+        if($value === null && $this->endAt === null){
+            $this->attributes['endAt'] = date('Y-m-d H:i:s', strtotime('+1 week', strtotime(date("Y-m-d H:i:s"))));
+        } else {
+            $this->attributes['endAt'] = $value;
+        }
     }
 
 }
