@@ -18,4 +18,12 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::resource('events', EventController::class);
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth'])->name('dashboard');
+
+Route::resource('events', EventController::class)->except(['index', 'show'])->middleware(['auth']);
+
+Route::resource('events', EventController::class)->only(['index', 'show']);
+
+require __DIR__.'/auth.php';

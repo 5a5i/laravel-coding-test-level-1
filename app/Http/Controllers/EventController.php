@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use App\Mail\NewEventNotification;
+use Illuminate\Support\Facades\Mail;
 
 class EventController extends Controller
 {
@@ -84,6 +87,7 @@ class EventController extends Controller
      */
     public function store(Request $request)
     {
+
         $storeData = $request->validate([
             'name' => 'required|max:255',
             'slug' => 'unique:event|nullable|max:255',
@@ -92,6 +96,15 @@ class EventController extends Controller
         ]);
 
         $event = Event::create($storeData);
+
+        $details = [
+            'title' => 'Event successfully created!',
+            'body' => 'Please find below for the details event -'
+        ];
+
+        $user = auth()->user();
+
+        Mail::to($user->email)->send(new NewEventNotification(array_merge($details,json_decode($event, true))));
 
         return redirect('/events')->with('success', 'Event created!');
     }
