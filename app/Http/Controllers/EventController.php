@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use App\Mail\NewEventNotification;
+use Illuminate\Support\Facades\Mail;
 
 class EventController extends Controller
 {
@@ -84,6 +87,7 @@ class EventController extends Controller
      */
     public function store(Request $request)
     {
+
         $storeData = $request->validate([
             'name' => 'required|max:255',
             'slug' => 'unique:event|nullable|max:255',
@@ -92,6 +96,15 @@ class EventController extends Controller
         ]);
 
         $event = Event::create($storeData);
+
+        $details = [
+            'title' => 'Event successfully created!',
+            'body' => 'Please find below for the details event -'
+        ];
+
+        $user = auth()->user();
+
+        Mail::to($user->email)->send(new NewEventNotification(array_merge($details,json_decode($event, true))));
 
         return redirect('/events')->with('success', 'Event created!');
     }
@@ -161,11 +174,21 @@ class EventController extends Controller
     /**
      * Display a listing of the resource.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function events()
+    public function events(Request $request)
     {
-        $events = Event::all();
+
+        if($request->has('pageIndex') || $request->has('pageSize')){
+
+            $pageSize = $request->pageSize ?? 5;
+            $pageIndex = $request->pageIndex ?? 0;
+
+            $events = Event::paginate($pageSize, ['*'], 'page', $pageIndex+1);
+        } else {
+            $events = Event::all();
+        }
 
         $response = $events->isEmpty() ? ['message' => 'not found'] : $events;
 
